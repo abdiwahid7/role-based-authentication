@@ -1,0 +1,1 @@
+const List<String> userRoles = ['admin', 'ngo', 'volunteer'];
