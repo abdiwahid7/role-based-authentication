@@ -9,77 +9,141 @@ class AdminDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Admin Dashboard'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout),
-                tooltip: 'Logout',
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-                },
-              ),
-            ],
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('Admin Dashboard'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (route) => false,
+              );
+            },
           ),
-          body: constraints.maxWidth > 600
-              ? Row(
-                  children: [
-                    Expanded(child: _buildMenu(context)),
-                    const VerticalDivider(width: 1),
-                    const Expanded(
-                      child: Center(
-                        child: Text(
-                          'Select an option from the menu',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ],
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF6D5BFF), Color(0xFF46C2CB)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 60),
+                Card(
+                  elevation: 16,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                  margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.admin_panel_settings, size: 56, color: Color(0xFF6D5BFF)),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Welcome, Admin!',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF6D5BFF),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 24),
+                        _DashboardButton(
+                          icon: Icons.people,
+                          color: Colors.blue,
+                          label: 'Manage Users',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ManageUsersScreen()),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        _DashboardButton(
+                          icon: Icons.verified_user,
+                          color: Colors.green,
+                          label: 'Verify Organizers',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const VerifyOrganizersScreen()),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        _DashboardButton(
+                          icon: Icons.analytics,
+                          color: Colors.deepPurple,
+                          label: 'View Analytics',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                )
-              : _buildMenu(context),
-        );
-      },
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
+}
 
-  Widget _buildMenu(BuildContext context) {
-    return ListView(
-      children: [
-        ListTile(
-          leading: const Icon(Icons.people),
-          title: const Text('Manage Users'),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ManageUsersScreen()),
-            );
-          },
+class _DashboardButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final VoidCallback onTap;
+
+  const _DashboardButton({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 220,
+      child: ElevatedButton.icon(
+        icon: Icon(icon, color: Colors.white, size: 28),
+        label: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
         ),
-        ListTile(
-          leading: const Icon(Icons.verified_user),
-          title: const Text('Verify Organizers'),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const VerifyOrganizersScreen()),
-            );
-          },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          elevation: 8,
+          shadowColor: color.withOpacity(0.3),
         ),
-        ListTile(
-          leading: const Icon(Icons.analytics),
-          title: const Text('View Analytics'),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
-            );
-          },
-        ),
-      ],
+        onPressed: onTap,
+      ),
     );
   }
 }

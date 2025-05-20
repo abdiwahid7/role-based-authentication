@@ -9,35 +9,81 @@ class EventReportsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
-      appBar: AppBar(title: const Text('Event Reports/Updates')),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('events')
-            .where('organizerId', isEqualTo: user?.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final events = snapshot.data!.docs;
-          return ListView.builder(
-            itemCount: events.length,
-            itemBuilder: (context, index) {
-              final event = events[index];
-              return ListTile(
-                title: Text(event['title']),
-                subtitle: Text(event['report'] ?? 'No report yet'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) => EditReportDialog(eventId: event.id, initialReport: event['report'] ?? ''),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('Event Reports/Updates'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.white,
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF6D5BFF), Color(0xFF46C2CB)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Card(
+            elevation: 16,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+            child: Container(
+              width: 500,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('events')
+                    .where('organizerId', isEqualTo: user?.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                  final events = snapshot.data!.docs;
+                  if (events.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No events found.',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
                     );
-                  },
-                ),
-              );
-            },
-          );
-        },
+                  }
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: events.length,
+                    itemBuilder: (context, index) {
+                      final event = events[index];
+                      return Card(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        elevation: 4,
+                        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        child: ListTile(
+                          leading: const Icon(Icons.event_note, color: Colors.deepPurple, size: 32),
+                          title: Text(event['title'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(event['report'] ?? 'No report yet'),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.orange),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (_) => EditReportDialog(
+                                  eventId: event.id,
+                                  initialReport: event['report'] ?? '',
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -65,6 +111,7 @@ class _EditReportDialogState extends State<EditReportDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       title: const Text('Edit Event Report'),
       content: TextField(
         controller: _controller,
@@ -88,7 +135,13 @@ class _EditReportDialogState extends State<EditReportDialog> {
                   setState(() => _saving = false);
                   Navigator.pop(context);
                 },
-          child: _saving ? const CircularProgressIndicator() : const Text('Save'),
+          child: _saving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Save'),
         ),
       ],
     );

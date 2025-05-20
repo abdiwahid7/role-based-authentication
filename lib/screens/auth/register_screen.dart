@@ -10,13 +10,36 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _displayNameController = TextEditingController();
   String _role = 'volunteer';
   bool _isLoading = false;
+  late AnimationController _logoController;
+  late Animation<double> _logoAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _logoController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _logoAnimation = CurvedAnimation(parent: _logoController, curve: Curves.elasticOut);
+    _logoController.forward();
+  }
+
+  @override
+  void dispose() {
+    _logoController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _displayNameController.dispose();
+    super.dispose();
+  }
 
   void _register() async {
     if (_passwordController.text != _confirmPasswordController.text) {
@@ -43,43 +66,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (user != null) {
+      // Save additional user info to Firestore
+      await firestoreService.setUser(
+        user.uid,
+        {
+          'displayName': _displayNameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'role': _role,
+          'hoursServed': 0,
+          'badges': [],
+          'verified': _role == 'ngo' ? false : null,
+        },
+      );
       // Send verification email
       await user.sendEmailVerification();
-
-      // Save user profile to Firestore
-      await firestoreService.setUser(user.uid, {
-        'email': user.email,
-        'role': _role,
-        'displayName': _displayNameController.text.trim(),
-        'hoursServed': 0,
-        'badges': [],
-        'verified': _role == 'ngo' ? false : true, // for NGO verification
-      });
-
       setState(() => _isLoading = false);
-
-      // Show message and redirect to login
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => AlertDialog(
-          title: const Text('Verify Your Email'),
-          content: const Text('A verification link has been sent to your email. Please verify your email before continuing.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pushReplacementNamed(context, '/login'); // Go to login
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registration successful! Please verify your email.')),
       );
+      Navigator.pop(context);
     } else {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration failed')),
+        SnackBar(content: Text(authService.lastError ?? 'Registration failed')),
       );
     }
   }
@@ -107,42 +116,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Center(
           child: SingleChildScrollView(
             child: Card(
-              elevation: 16,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              elevation: 20,
+              shadowColor: Colors.deepPurple.withOpacity(0.18),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(36)),
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.person_add_alt_1, size: 48, color: Color(0xFF6D5BFF)),
-                    const SizedBox(height: 12),
+                    ScaleTransition(
+                      scale: _logoAnimation,
+                      child: CircleAvatar(
+                        radius: 38,
+                        backgroundColor: const Color(0xFF6D5BFF),
+                        child: const Icon(Icons.volunteer_activism, color: Colors.white, size: 44),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
                     const Text(
                       'Create Account',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF6D5BFF),
+                        letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Join LocalLoop and make a difference!',
+                    const SizedBox(height: 6),
+                    Text(
+                      'Join our volunteering community!',
                       style: TextStyle(
                         fontSize: 15,
-                        color: Colors.black54,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 28),
                     TextField(
                       controller: _displayNameController,
                       decoration: InputDecoration(
-                        labelText: 'Name',
+                        labelText: 'Full Name',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                         prefixIcon: const Icon(Icons.person),
                         filled: true,
                         fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -150,10 +168,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _emailController,
                       decoration: InputDecoration(
                         labelText: 'Email',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                         prefixIcon: const Icon(Icons.email),
                         filled: true,
                         fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -162,10 +180,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _passwordController,
                       decoration: InputDecoration(
                         labelText: 'Password',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                         prefixIcon: const Icon(Icons.lock),
                         filled: true,
                         fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
                       ),
                       obscureText: true,
                     ),
@@ -174,65 +192,83 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _confirmPasswordController,
                       decoration: InputDecoration(
                         labelText: 'Confirm Password',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                         prefixIcon: const Icon(Icons.lock_outline),
                         filled: true,
                         fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
                       ),
                       obscureText: true,
                     ),
                     const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFF6D5BFF)),
-                        borderRadius: BorderRadius.circular(18),
-                        color: Colors.grey[100],
+                    DropdownButtonFormField<String>(
+                      value: _role,
+                      decoration: InputDecoration(
+                        labelText: 'Register as',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                        prefixIcon: const Icon(Icons.group),
+                        filled: true,
+                        fillColor: Colors.grey[100],
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _role,
-                          items: const [
-                            DropdownMenuItem(value: 'volunteer', child: Text('Volunteer')),
-                            DropdownMenuItem(value: 'ngo', child: Text('NGO')),
-                            DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              _role = value!;
-                            });
-                          },
-                        ),
-                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'volunteer', child: Text('Volunteer')),
+                        DropdownMenuItem(value: 'ngo', child: Text('NGO/Organizer')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _role = value!;
+                        });
+                      },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: const Color(0xFF6D5BFF),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          elevation: 8,
-                          shadowColor: const Color(0xFF6D5BFF).withOpacity(0.3),
-                        ),
                         onPressed: _isLoading ? null : _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6D5BFF),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 8,
+                        ),
                         child: _isLoading
                             ? const SizedBox(
-                                height: 22,
                                 width: 22,
+                                height: 22,
                                 child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                  strokeWidth: 2,
                                 ),
                               )
                             : const Text(
                                 'Register',
-                                style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 1.1,
+                                ),
                               ),
                       ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Already have an account?",
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                          child: const Text(
+                            'Login',
+                            style: TextStyle(
+                              color: Color(0xFF46C2CB),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

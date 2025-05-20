@@ -7,53 +7,99 @@ class ManageUsersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Users')),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final users = snapshot.data!.docs;
-          return ListView.builder(
-            itemCount: users.length,
-            itemBuilder: (context, index) {
-              final user = users[index];
-              return ListTile(
-                leading: Icon(Icons.person, color: Colors.blue, size: 32),
-                title: Text(user['displayName'] ?? user['email']),
-                subtitle: Text('Role: ${user['role']}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.visibility, color: Colors.blue),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => UserViewDialog(user: user),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.orange),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => UserEditDialog(user: user),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () async {
-                        await FirebaseFirestore.instance.collection('users').doc(user.id).delete();
-                      },
-                    ),
-                  ],
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('Manage Users'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.white,
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF6D5BFF), Color(0xFF46C2CB)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('users').snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final users = snapshot.data!.docs;
+            return Center(
+              child: Card(
+                elevation: 16,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+                child: Container(
+                  width: 500,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: users.length,
+                    itemBuilder: (context, index) {
+                      final user = users[index];
+                      return Card(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        elevation: 4,
+                        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.blue.shade100,
+                            child: const Icon(Icons.person, color: Colors.blue, size: 28),
+                          ),
+                          title: Text(user['displayName'] ?? user['email'],
+                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('Role: ${user['role']}'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.visibility, color: Colors.blue),
+                                tooltip: 'View',
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => UserViewDialog(user: user),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.orange),
+                                tooltip: 'Edit',
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => UserEditDialog(user: user),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                tooltip: 'Delete',
+                                onPressed: () async {
+                                  await FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(user.id)
+                                      .delete();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              );
-            },
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -66,6 +112,7 @@ class UserViewDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       title: const Text('User Details'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -110,6 +157,7 @@ class _UserEditDialogState extends State<UserEditDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       title: const Text('Edit User'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -121,9 +169,18 @@ class _UserEditDialogState extends State<UserEditDialog> {
           DropdownButton<String>(
             value: _role,
             items: const [
-              DropdownMenuItem(value: 'admin', child: Text('Admin')),
-              DropdownMenuItem(value: 'ngo', child: Text('NGO')),
-              DropdownMenuItem(value: 'volunteer', child: Text('Volunteer')),
+              DropdownMenuItem(
+                value: 'admin',
+                child: Text('Admin'),
+              ),
+              DropdownMenuItem(
+                value: 'ngo',
+                child: Text('NGO'),
+              ),
+              DropdownMenuItem(
+                value: 'volunteer',
+                child: Text('Volunteer'),
+              ),
             ],
             onChanged: (value) {
               setState(() {
@@ -140,7 +197,10 @@ class _UserEditDialogState extends State<UserEditDialog> {
         ),
         ElevatedButton(
           onPressed: () async {
-            await FirebaseFirestore.instance.collection('users').doc(widget.user.id).update({
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(widget.user.id)
+                .update({
               'displayName': _nameController.text,
               'role': _role,
             });

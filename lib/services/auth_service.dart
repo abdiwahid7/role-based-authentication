@@ -2,12 +2,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  String? lastError; // Add this line
 
   Future<User?> signIn(String email, String password) async {
     try {
       final result = await _auth.signInWithEmailAndPassword(email: email, password: password);
+      lastError = null;
       return result.user;
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
+      lastError = e.message;
       return null;
     }
   }
@@ -15,8 +18,10 @@ class AuthService {
   Future<User?> register(String email, String password) async {
     try {
       final result = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      lastError = null;
       return result.user;
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
+      lastError = e.message;
       return null;
     }
   }
