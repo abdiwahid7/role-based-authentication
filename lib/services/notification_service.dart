@@ -1,14 +1,32 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  static final _firebaseMessaging = FirebaseMessaging.instance;
+  static final _localNotifications = FlutterLocalNotificationsPlugin();
 
-  Future<void> init() async {
-    await _fcm.requestPermission();
-    // Handle foreground/background messages as needed
+  static Future<void> initialize() async {
+    final android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    final ios = DarwinInitializationSettings();
+    final settings = InitializationSettings(android: android, iOS: ios);
+    await _localNotifications.initialize(settings);
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        _localNotifications.show(
+          message.hashCode,
+          message.notification!.title,
+          message.notification!.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails('main_channel', 'Main Channel', importance: Importance.max, priority: Priority.high),
+            iOS: DarwinNotificationDetails(),
+          ),
+        );
+      }
+    });
   }
 
-  Future<String?> getToken() async {
-    return await _fcm.getToken();
+  static Future<void> requestPermission() async {
+    await _firebaseMessaging.requestPermission();
   }
 }

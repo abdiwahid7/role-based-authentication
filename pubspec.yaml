@@ -41,6 +41,9 @@ dependencies:
   firebase_messaging: ^15.2.5
   pdf: ^3.11.3
   firebase_storage: ^12.4.5
+  flutter_local_notifications: ^19.2.1
+  open_file: ^3.5.10
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

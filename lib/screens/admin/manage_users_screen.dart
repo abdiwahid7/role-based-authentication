@@ -18,6 +18,7 @@ class ManageUsersScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final user = users[index];
               return ListTile(
+                leading: Icon(Icons.person, color: Colors.blue, size: 32),
                 title: Text(user['displayName'] ?? user['email']),
                 subtitle: Text('Role: ${user['role']}'),
                 trailing: Row(
@@ -143,7 +144,9 @@ class _UserEditDialogState extends State<UserEditDialog> {
               'displayName': _nameController.text,
               'role': _role,
             });
-            Navigator.pop(context);
+            if (mounted) {
+              Navigator.pop(context);
+            }
           },
           child: const Text('Save'),
         ),

@@ -6,36 +6,46 @@ class AnalyticsScreen extends StatelessWidget {
 
   Future<int> _getCount(String collection) async {
     final snapshot = await FirebaseFirestore.instance.collection(collection).get();
-    return snapshot.docs.length;
+    return snapshot.size;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Analytics')),
-      body: FutureBuilder(
-        future: Future.wait([
-          _getCount('users'),
-          _getCount('events'),
-        ]),
-        builder: (context, AsyncSnapshot<List<int>> snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final userCount = snapshot.data![0];
-          final eventCount = snapshot.data![1];
-          return ListView(
-            children: [
-              ListTile(
-                title: const Text('Total Users'),
-                trailing: Text('$userCount'),
-              ),
-              ListTile(
-                title: const Text('Total Events'),
-                trailing: Text('$eventCount'),
-              ),
-              // Add more analytics as needed
-            ],
-          );
-        },
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            FutureBuilder<int>(
+              future: _getCount('users'),
+              builder: (context, snapshot) {
+                final count = snapshot.data ?? 0;
+                return Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.people, color: Colors.blue, size: 36),
+                    title: const Text('Total Users'),
+                    trailing: Text('$count', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            FutureBuilder<int>(
+              future: _getCount('events'),
+              builder: (context, snapshot) {
+                final count = snapshot.data ?? 0;
+                return Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.event, color: Colors.green, size: 36),
+                    title: const Text('Total Events'),
+                    trailing: Text('$count', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
