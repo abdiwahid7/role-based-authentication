@@ -29,8 +29,19 @@ class VolunteeringProfileScreen extends StatelessWidget {
         child: FutureBuilder<DocumentSnapshot>(
           future: FirebaseFirestore.instance.collection('users').doc(user?.uid).get(),
           builder: (context, snapshot) {
-            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (!snapshot.data!.exists) {
+              return const Center(
+                child: Text(
+                  'Profile not found.',
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              );
+            }
             final data = snapshot.data!.data() as Map<String, dynamic>;
+            final badges = (data['badges'] ?? []) as List;
             return Center(
               child: Card(
                 elevation: 16,
@@ -45,9 +56,9 @@ class VolunteeringProfileScreen extends StatelessWidget {
                       const Icon(Icons.person, size: 56, color: Color(0xFF6D5BFF)),
                       const SizedBox(height: 12),
                       Text('Name: ${data['displayName'] ?? ''}', style: const TextStyle(fontSize: 18)),
-                      Text('Email: ${data['email']}', style: const TextStyle(fontSize: 18)),
+                      Text('Email: ${data['email'] ?? ''}', style: const TextStyle(fontSize: 18)),
                       Text('Hours Served: ${data['hoursServed'] ?? 0}', style: const TextStyle(fontSize: 18)),
-                      Text('Badges: ${(data['badges'] as List).join(', ')}', style: const TextStyle(fontSize: 18)),
+                      Text('Badges: ${badges.isNotEmpty ? badges.join(', ') : 'None'}', style: const TextStyle(fontSize: 18)),
                     ],
                   ),
                 ),
