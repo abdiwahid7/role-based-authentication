@@ -83,7 +83,7 @@ class VolunteerDashboard extends StatelessWidget {
                       color: Colors.deepPurple,
                       label: 'My Certificates',
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const CertificatesScreen()));
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const CertificatesScreen(volunteerName: '', eventName: '', hours: 0)));
                       },
                     ),
                     const SizedBox(height: 18),

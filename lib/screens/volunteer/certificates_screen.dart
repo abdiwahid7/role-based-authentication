@@ -3,7 +3,16 @@ import '../../utilis/certificate_generator.dart';
 import 'package:open_file/open_file.dart';
 
 class CertificatesScreen extends StatelessWidget {
-  const CertificatesScreen({super.key});
+  final String volunteerName;
+  final String eventName;
+  final int hours;
+
+  const CertificatesScreen({
+    super.key,
+    required this.volunteerName,
+    required this.eventName,
+    required this.hours,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +54,9 @@ class CertificatesScreen extends StatelessWidget {
                 ),
                 onPressed: () async {
                   final file = await generateCertificate(
-                    volunteerName: 'John Doe', // Replace with actual volunteer name
-                    eventName: 'Tree Plantation', // Replace with actual event name
-                    hours: 5, // Replace with actual hours
+                    volunteerName: volunteerName,
+                    eventName: eventName,
+                    hours: hours,
                   );
                   OpenFile.open(file.path);
                 },
